@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SafeSight | Emergency Report</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #f3f6fb;
+      color: #172b45;
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      padding: 18px 5%;
+      background: #10233f;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 { margin: 0; font-size: 24px; }
+    header a { color: white; text-decoration: none; }
+
+    .container { max-width: 900px; margin: 28px auto; padding: 0 16px; }
+
+    #reportForm {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 6px 24px #172b4510;
+      min-width: 0;
+    }
+
+    h2 { margin: 0 0 8px; font-size: 28px; }
+    h3 { margin: 0 0 8px; font-size: 19px; }
+    .subtitle, .description, .hint { color: #61728a; }
+    .subtitle { margin: 0 0 26px; }
+    .description { margin: 0 0 18px; }
+    .hint { font-size: 13px; margin-top: 5px; }
+
+    .section {
+      border-top: 1px solid #e1e8f0;
+      padding-top: 24px;
+      margin-top: 24px;
+      min-width: 0;
+    }
+
+    .field { margin-bottom: 18px; min-width: 0; }
+
+    .field > label,
+    .photo-box > label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    input:not([type="checkbox"]):not([type="file"]),
+    select, textarea {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd6e4;
+      border-radius: 9px;
+      background: white;
+      color: #172b45;
+      font: inherit;
+    }
+
+    input[type="file"] {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      padding: 12px;
+      border: 1px solid #d5deeb;
+      border-radius: 9px;
+      background: white;
+    }
+
+    textarea { min-height: 115px; resize: vertical; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 18px; }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 12px 16px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .primary { color: white; background: #2563eb; }
+    .secondary { color: #1745a0; background: #e8efff; }
+    .neutral { color: #26364c; background: #edf1f6; }
+
+    #locationMap {
+      display: block;
+      width: 100%;
+      height: 360px;
+      background: #e5eaf0;
+      border: 1px solid #d1dae6;
+      border-radius: 12px;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .coordinates {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 9px;
+      background: #f4f7fb;
+    }
+
+    .coordinates div { min-width: 0; overflow-wrap: anywhere; }
+
+    .photo-box {
+      padding: 20px;
+      border: 1px dashed #b7c9e4;
+      border-radius: 12px;
+      background: #f8faff;
+    }
+
+    #photoPreview {
+      display: none;
+      max-width: 100%;
+      max-height: 260px;
+      margin-top: 14px;
+      border-radius: 9px;
+    }
+
+    .consent-row {
+      display: flex !important;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 12px;
+      width: 100%;
+      min-width: 0;
+      margin: 24px 0;
+      padding: 16px;
+      border-radius: 10px;
+      background: #f4f7fb;
+    }
+
+    .consent-row input[type="checkbox"] {
+      display: block;
+      flex: 0 0 18px;
+      width: 18px;
+      height: 18px;
+      margin: 3px 0 0;
+    }
+
+    .consent-row label {
+      display: block;
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
+      margin: 0;
+      font-weight: 400;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    #submitBtn { display: block; width: 100%; padding: 16px; }
+
+    .message { display: none; padding: 12px; margin: 14px 0; border-radius: 8px; overflow-wrap: anywhere; }
+    .message.show { display: block; }
+    .message.info { background: #e8f1ff; color: #1745a0; }
+    .message.success { background: #e4f7eb; color: #17653a; }
+    .message.error { background: #ffeded; color: #a32121; }
+
+    footer { padding: 20px; text-align: center; color: #61728a; }
+
+    @media (max-width: 600px) {
+      #reportForm { padding: 20px 16px; }
+      .grid, .coordinates { grid-template-columns: minmax(0, 1fr); }
+      #locationMap { height: 300px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>SafeSight</h1>
+    <a href="../index.html">Home</a>
+  </header>
+
+  <main class="container">
+    <form id="reportForm">
+      <h2>Report an Emergency</h2>
+      <p class="subtitle">Share incident details to help responders understand the situation.</p>
+
+      <div id="formMessage" class="message" role="status" aria-live="polite"></div>
+
+      <section class="section">
+        <h3>01. Incident details</h3>
+        <p class="description">Describe what is happening.</p>
+
+        <div class="field">
+          <label for="disasterType">Incident type *</label>
+          <select id="disasterType" required>
+            <option value="">Select incident type</option>
+            <option value="Flood">Flood</option>
+            <option value="Fire">Fire</option>
+            <option value="Earthquake">Earthquake</option>
+            <option value="Landslide">Landslide</option>
+            <option value="Cyclone">Cyclone</option>
+            <option value="Building Collapse">Building Collapse</option>
+            <option value="Road Accident">Road Accident</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="description">Incident description *</label>
+          <textarea id="description" minlength="10" required
+            placeholder="Describe what happened, the severity, nearby landmarks and any immediate risks..."></textarea>
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label for="peopleAffected">People affected (estimate)</label>
+            <input id="peopleAffected" type="number" min="0" step="1" placeholder="e.g. 10">
+          </div>
+          <div class="field">
+            <label for="peopleTrapped">Are people trapped?</label>
+            <select id="peopleTrapped">
+              <option value="false">No / Not known</option>
+              <option value="true">Yes</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>02. Incident location</h3>
+        <p class="description">Use GPS, search for an address, or select a point on the map.</p>
+
+        <div class="button-row">
+          <button type="button" id="currentLocationBtn" class="primary">Use my current location</button>
+          <button type="button" id="resetLocationBtn" class="neutral">Clear location</button>
+        </div>
+
+        <div class="field">
+          <label for="manualAddress">Enter incident address</label>
+          <input id="manualAddress" type="text" placeholder="Street, area, city or nearby landmark">
+          <div class="hint">Include the city for more accurate results.</div>
+          <div class="button-row">
+            <button type="button" id="searchAddressBtn" class="secondary">Find address on map</button>
+          </div>
+        </div>
+
+        <div id="locationMessage" class="message" role="status" aria-live="polite"></div>
+
+        <div id="locationMap"></div>
+        <p class="hint">Click the map or drag the marker to set the exact incident location.</p>
+
+        <div class="coordinates">
+          <div><strong>Latitude:</strong> <span id="latitudeDisplay">Not selected</span></div>
+          <div><strong>Longitude:</strong> <span id="longitudeDisplay">Not selected</span></div>
+        </div>
+
+        <input id="latitude" type="hidden">
+        <input id="longitude" type="hidden">
+      </section>
+
+      <section class="section">
+        <h3>03. Photo evidence</h3>
+        <p class="description">Upload a photo only if it is safe to do so. Photo is optional.</p>
+
+        <div class="photo-box">
+          <label for="image">Attach incident photo</label>
+          <input id="image" type="file" accept="image/jpeg,image/png,image/webp">
+          <p class="hint">JPG, PNG or WEBP. Maximum 5 MB.</p>
+          <img id="photoPreview" alt="Incident photo preview">
+        </div>
+      </section>
+
+      <div class="consent-row">
+        <input id="consent" type="checkbox" required>
+        <label for="consent">I confirm that the information I provided is accurate to the best of my knowledge. I understand that this report may be reviewed by authorized response personnel.</label>
+      </div>
+
+      <button id="submitBtn" type="submit" class="primary">Submit incident report →</button>
+    </form>
+  </main>
+
+  <footer>SafeSight — Community-powered emergency reporting</footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../js/citizen.js"></script>
+</body>
+</html>

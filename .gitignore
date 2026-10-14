@@ -1,0 +1,25 @@
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+backend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Uploaded files
+backend/uploads/
+uploads/
+
+# Logs
+*.log
+
+# Editor and OS files
+.vscode/
+.DS_Store
+Thumbs.db

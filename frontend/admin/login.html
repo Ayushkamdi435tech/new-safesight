@@ -1,0 +1,509 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login | SafeSight</title>
+  <meta name="theme-color" content="#0b1730">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --navy: #0b1730;
+      --blue: #2563eb;
+      --muted: #718096;
+      --border: #e5eaf2;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      background: #f4f7fc;
+      color: var(--navy);
+      display: flex;
+      flex-direction: column;
+    }
+
+    nav {
+      height: 76px;
+      padding: 0 7%;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.7px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--blue);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+    }
+
+    .brand span small {
+      display: block;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: #53627a;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 1120px;
+      width: 90%;
+      margin: 45px auto;
+      background: white;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 20px 70px rgba(24, 46, 85, 0.09);
+      min-height: 570px;
+    }
+
+    .welcome {
+      padding: 55px 48px;
+      background: var(--navy);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome::before,
+    .welcome::after {
+      content: "";
+      position: absolute;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 50%;
+      width: 330px;
+      height: 330px;
+      right: -150px;
+      top: 80px;
+    }
+
+    .welcome::after {
+      width: 240px;
+      height: 240px;
+      right: -105px;
+      top: 125px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #8db4ff;
+      margin-bottom: 23px;
+    }
+
+    .welcome h1 {
+      font-size: clamp(32px, 4vw, 46px);
+      line-height: 1.15;
+      letter-spacing: -1.8px;
+      margin-bottom: 20px;
+      max-width: 410px;
+    }
+
+    .welcome p {
+      color: #bdc9dd;
+      line-height: 1.8;
+      font-size: 15px;
+      max-width: 390px;
+    }
+
+    .feature-list {
+      margin-top: 40px;
+      display: grid;
+      gap: 17px;
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      font-size: 14px;
+      color: #e3eaf6;
+    }
+
+    .feature-icon {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      border: 1px solid #344665;
+      background: #172746;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: #91b7ff;
+      font-size: 17px;
+    }
+
+    .welcome-bottom {
+      margin-top: 45px;
+      font-size: 12px;
+      color: #8d9db8;
+    }
+
+    .login-panel {
+      padding: 55px 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .secure-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #167447;
+      background: #eaf8f0;
+      padding: 9px 13px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 700;
+      width: fit-content;
+      margin-bottom: 28px;
+    }
+
+    .login-panel h2 {
+      font-size: 31px;
+      letter-spacing: -1px;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 9px;
+      color: #25344d;
+    }
+
+    .input-wrap {
+      position: relative;
+      margin-bottom: 22px;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px 45px 15px 15px;
+      border: 1px solid #dce3ee;
+      border-radius: 11px;
+      outline: none;
+      font: inherit;
+      font-size: 14px;
+      color: var(--navy);
+      background: #fff;
+      transition: border .2s, box-shadow .2s;
+    }
+
+    input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(37,99,235,.10);
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 0;
+      background: none;
+      color: #687790;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .login-button {
+      width: 100%;
+      padding: 15px;
+      border: 0;
+      border-radius: 11px;
+      background: var(--blue);
+      color: white;
+      font-weight: 750;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background .2s, transform .2s;
+      margin-top: 5px;
+    }
+
+    .login-button:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    .message {
+      display: none;
+      margin-top: 17px;
+      padding: 12px 14px;
+      border-radius: 9px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .message.error {
+      display: block;
+      color: #b42318;
+      background: #fff0ef;
+      border: 1px solid #ffd8d5;
+    }
+
+    .message.info {
+      display: block;
+      color: #1d4ed8;
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+    }
+
+    .login-note {
+      text-align: center;
+      color: #8290a5;
+      font-size: 12px;
+      line-height: 1.7;
+      margin-top: 26px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: #8190a5;
+    }
+
+    @media (max-width: 760px) {
+      nav {
+        padding: 0 5%;
+        height: 68px;
+      }
+
+      main {
+        grid-template-columns: 1fr;
+        width: 92%;
+        margin: 24px auto;
+      }
+
+      .welcome {
+        padding: 32px 28px;
+      }
+
+      .welcome h1 {
+        font-size: 32px;
+      }
+
+      .feature-list,
+      .welcome-bottom {
+        margin-top: 28px;
+      }
+
+      .login-panel {
+        padding: 35px 28px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <nav>
+    <div class="brand">
+      <div class="brand-icon">✦</div>
+      <span>
+        SafeSight
+        <small>DISASTER RESPONSE</small>
+      </span>
+    </div>
+    <a href="../index.html">← Back to home</a>
+  </nav>
+
+  <main>
+    <section class="welcome">
+      <div>
+        <span class="eyebrow">RESCUE COORDINATION PORTAL</span>
+        <h1>Make every response count.</h1>
+        <p>
+          A dedicated workspace for authorized response teams to review
+          community reports, prioritize emergencies and coordinate action.
+        </p>
+
+        <div class="feature-list">
+          <div class="feature">
+            <div class="feature-icon">⌖</div>
+            <span>Review location-aware incident reports</span>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">↗</div>
+            <span>Prioritize incidents by urgency</span>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">✓</div>
+            <span>Track response and resolution status</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="welcome-bottom">
+        SAFESIGHT · COMMUNITY REPORTING & RESCUE COORDINATION
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <div class="secure-tag">🔒 &nbsp; AUTHORIZED ACCESS ONLY</div>
+
+      <h2>Welcome back</h2>
+      
+<p class="subtitle">
+  Enter your administrator credentials to access the SafeSight response dashboard.
+</p>
+
+
+      <form id="loginForm">
+        
+<label for="username">Username</label>
+<div class="input-wrap">
+  <input
+    id="username"
+    type="text"
+    placeholder="Enter your username"
+    autocomplete="username"
+    required
+  >
+</div>
+
+<label for="password">Password</label>
+<div class="input-wrap">
+  <input
+    id="password"
+    type="password"
+    placeholder="Enter your password"
+    autocomplete="current-password"
+    required
+  >
+  <button class="toggle-password" type="button" id="togglePassword">
+    SHOW
+  </button>
+</div>
+<button type="submit" id="loginButton" class="login-button">
+  Access dashboard →
+</button>
+
+<div id="message" class="message"></div>
+      </form>
+
+      <p class="login-note">
+        Access is restricted to authorized administrators.<br>
+        Your key is checked by the SafeSight API.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 SafeSight · Disaster Response Prototype
+  </footer>
+
+  <script>
+const API_BASE = "http://127.0.0.1:8000/api";
+const KEY_STORAGE = "safesight_admin_key";
+const form = document.getElementById("loginForm");
+const usernameInput = document.getElementById("username");
+const passwordInput = document.getElementById("password");
+const toggleButton = document.getElementById("togglePassword");
+const loginButton = document.getElementById("loginButton");
+const message = document.getElementById("message");
+
+function showMessage(text, type) {
+  message.textContent = text;
+  message.className = "message " + type;
+}
+
+toggleButton.addEventListener("click", () => {
+  const show = passwordInput.type === "password";
+  passwordInput.type = show ? "text" : "password";
+  toggleButton.textContent = show ? "HIDE" : "SHOW";
+});
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value;
+
+  loginButton.disabled = true;
+  loginButton.textContent = "Verifying...";
+  message.className = "message";
+
+  try {
+    const response = await fetch(`${API_BASE}/admin/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || "Login failed.");
+    }
+
+    if (!data.admin_key) {
+      throw new Error(
+        "Admin key missing in login response. Check backend/main.py."
+      );
+    }
+
+    sessionStorage.setItem(KEY_STORAGE, data.admin_key);
+    window.location.href = "dashboard.html";
+  } catch (error) {
+    showMessage(
+      error.message || "Cannot connect to SafeSight API.",
+      "error"
+    );
+  } finally {
+    loginButton.disabled = false;
+    loginButton.textContent = "Access dashboard →";
+  }
+});
+  </script>
+</body>
+</html>

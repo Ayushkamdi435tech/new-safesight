@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeSight | Rescue Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root{--navy:#10243a;--blue:#2563eb;--bg:#f4f7fb;--muted:#64748b;--line:#e5eaf1;--white:#fff}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--navy);font-family:Inter,Arial,sans-serif}
+    button,input,select{font:inherit}button{cursor:pointer}
+    .layout{min-height:100vh}
+    .sidebar{width:250px;background:#10243a;color:#fff;position:fixed;inset:0 auto 0 0;padding:28px 18px;display:flex;flex-direction:column;z-index:1000}
+    .brand{color:#fff;font-size:23px;font-weight:800;text-decoration:none;padding:0 12px}.brand span{color:#60a5fa}
+    .brand-caption{color:#9eafc3;font-size:11px;margin:8px 12px 38px;letter-spacing:1.5px}
+    .nav-label{color:#8194ab;font-size:10px;letter-spacing:1.5px;padding:0 12px;margin-bottom:12px}
+    .nav-link{display:flex;gap:12px;align-items:center;padding:13px 14px;color:#c8d5e5;text-decoration:none;border-radius:10px;margin-bottom:6px;font-size:13px;font-weight:600}
+    .nav-link.active,.nav-link:hover{background:#1d3a59;color:#fff}.nav-link.active{box-shadow:inset 3px 0 #60a5fa}
+    .sidebar-bottom{margin-top:auto;border-top:1px solid #2b4058;padding:18px 10px 0;font-size:12px;color:#a7b8cb}
+    .online-dot{display:inline-block;width:8px;height:8px;background:#34d399;border-radius:50%;margin-right:7px}
+    .main{margin-left:250px;min-width:0}
+    .topbar{background:#fff;min-height:76px;border-bottom:1px solid var(--line);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+    .topbar h2{font-size:17px;margin:0 0 5px}.topbar p{font-size:11px;color:var(--muted);margin:0}
+    .top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .admin-chip{background:#eff6ff;color:#1d4ed8;padding:10px 13px;border-radius:9px;font-size:12px;font-weight:700}
+    .btn{border:0;border-radius:9px;padding:11px 15px;font-size:12px;font-weight:700}
+    .btn-blue{background:var(--blue);color:#fff}.btn-light{background:#edf2f8;color:#334155}.btn-red{background:#fee2e2;color:#b91c1c}
+    .content{padding:30px 32px;max-width:1700px;margin:auto}
+    .welcome{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:25px}
+    .welcome h1{font-size:25px;margin:0 0 8px;letter-spacing:-1px}.welcome p{margin:0;color:var(--muted);font-size:13px}
+    .date-label{color:var(--muted);font-size:12px}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px;margin-bottom:24px}
+    .stat-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:21px;box-shadow:0 4px 16px rgba(15,35,60,.025)}
+    .stat-head{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:600}
+    .stat-icon{display:grid;place-items:center;width:39px;height:39px;border-radius:11px;background:#eff6ff;font-size:18px}
+    .stat-card strong{display:block;font-size:31px;margin:17px 0 6px;letter-spacing:-1px}.stat-note{color:#8290a3;font-size:11px}
+    .stat-card.urgent .stat-icon{background:#fff0f0}.stat-card.resolved .stat-icon{background:#e8faf1}.stat-card.pending .stat-icon{background:#fff7e6}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:15px;padding:22px;min-width:0;box-shadow:0 4px 16px rgba(15,35,60,.025)}
+    .panel-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+    .panel-heading h3{font-size:15px;margin:0 0 5px}.panel-heading p{font-size:11px;color:var(--muted);margin:0}
+    .filters{display:grid;grid-template-columns:minmax(180px,2fr) repeat(2,minmax(140px,1fr)) auto;gap:11px;margin-bottom:18px}
+    .field{width:100%;border:1px solid #dce4ee;border-radius:9px;padding:11px 12px;background:#fff;color:#334155;outline:none;font-size:12px;min-width:0}
+    .field:focus{border-color:#60a5fa;box-shadow:0 0 0 3px #dbeafe}
+    .dashboard-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:20px;align-items:start}
+    .report-list{display:flex;flex-direction:column;gap:12px}
+    .report-item{padding:16px;border:1px solid var(--line);border-radius:12px;transition:.15s ease}
+    .report-item:hover{border-color:#9bbdf7;background:#fbfdff}
+    .report-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+    .report-id{font-size:10px;color:var(--blue);font-weight:800}.report-item h4{margin:8px 0;font-size:14px}
+    .report-description{color:var(--muted);font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+    .report-meta{display:flex;flex-wrap:wrap;gap:12px;margin-top:11px;font-size:10px;color:var(--muted)}
+    .badge{display:inline-flex;align-items:center;padding:6px 9px;border-radius:99px;font-size:10px;font-weight:800;background:#edf2f7;color:#475569;white-space:nowrap}
+    .badge.high,.badge.urgent{background:#fee2e2;color:#b91c1c}.badge.medium{background:#fef3c7;color:#92400e}.badge.low{background:#dcfce7;color:#166534}.badge.status{background:#eff6ff;color:#1d4ed8}
+    .report-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}.report-actions select{flex:1;min-width:150px}.report-actions .btn{padding:9px 12px}
+    #incidentMap{width:100%;height:370px;border-radius:11px;z-index:1}.map-caption{margin-top:12px;font-size:11px;color:var(--muted);line-height:1.6}
+    .message{padding:13px 15px;border-radius:9px;margin-bottom:15px;font-size:12px;display:none;overflow-wrap:anywhere}
+    .message.show{display:block}.message.info{background:#eff6ff;color:#1d4ed8}.message.error{background:#fff0f0;color:#b91c1c}.message.success{background:#e8faf1;color:#166534}
+    .empty{text-align:center;padding:40px 15px;color:var(--muted);font-size:12px;line-height:1.7}.empty .emoji{font-size:30px;margin-bottom:10px}
+    .overlay{position:fixed;inset:0;z-index:3000;background:rgba(8,24,43,.65);display:grid;place-items:center;padding:20px}
+    .login-card{background:#fff;border-radius:18px;width:min(100%,420px);padding:30px;box-shadow:0 25px 90px rgba(0,0,0,.2)}
+    .login-card h2{margin:0 0 8px;font-size:23px}.login-card p{color:var(--muted);font-size:12px;line-height:1.6}
+    .login-card label{display:block;font-size:12px;font-weight:700;margin:20px 0 8px}.login-card input{margin-bottom:15px}
+    .login-brand{color:var(--blue);font-weight:800;margin-bottom:25px}.detail-row{margin:12px 0;font-size:12px;line-height:1.6}
+    .detail-row strong{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px}
+    .detail-box{background:#f8fafc;border-radius:10px;padding:15px;margin-top:15px}.hidden{display:none!important}
+    .footer{padding:22px 32px;color:#8794a5;font-size:10px;text-align:center}
+    @media(max-width:1100px){.sidebar{width:210px}.main{margin-left:210px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){.sidebar{position:static;width:100%;padding:18px}.brand-caption,.nav-label,.sidebar nav,.sidebar-bottom{display:none}.main{margin-left:0}.topbar{padding:14px 17px}.content{padding:22px 15px}.welcome{align-items:flex-start;flex-direction:column}.stats{gap:10px}.stat-card{padding:15px}.stat-card strong{font-size:25px}.filters{grid-template-columns:1fr}.panel{padding:16px}.topbar p{display:none}.admin-chip{font-size:10px}.footer{padding:20px 10px}}
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="../index.html">Safe<span>Sight</span></a>
+    <div class="brand-caption">DISASTER RESPONSE SYSTEM</div>
+    <div class="nav-label">WORKSPACE</div>
+    <nav>
+      <a class="nav-link active" href="#overview"><span>▦</span> Overview</a>
+      <a class="nav-link" href="#reports"><span>▤</span> Incident Reports</a>
+      <a class="nav-link" href="#mapPanel"><span>⌖</span> Incident Map</a>
+      <a class="nav-link" href="../index.html"><span>↗</span> Citizen Portal</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div><span class="online-dot"></span><span id="apiStatus">Checking API connection…</span></div>
+      <p>SafeSight Rescue Operations</p>
+      <button class="btn btn-light" id="logoutBtn" style="width:100%">Sign out</button>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div><h2>Rescue Operations Center</h2><p>Incident monitoring and response coordination</p></div>
+      <div class="top-actions"><span class="admin-chip">🛡 Authorized Admin</span><button class="btn btn-blue" id="refreshBtn">↻ Refresh</button></div>
+    </header>
+    <div class="content">
+      <section class="welcome" id="overview">
+        <div><h1>Incident Overview</h1><p>Review incoming reports, prioritize emergencies and coordinate response.</p></div>
+        <div class="date-label" id="currentDate"></div>
+      </section>
+      <div id="globalMessage" class="message"></div>
+      <section class="stats">
+        <div class="stat-card"><div class="stat-head"><span>Total reports</span><span class="stat-icon">▤</span></div><strong id="totalCount">—</strong><div class="stat-note">All recorded incidents</div></div>
+        <div class="stat-card urgent"><div class="stat-head"><span>High priority</span><span class="stat-icon">⚠</span></div><strong id="highCount">—</strong><div class="stat-note">Requires urgent review</div></div>
+        <div class="stat-card pending"><div class="stat-head"><span>Pending review</span><span class="stat-icon">◷</span></div><strong id="pendingCount">—</strong><div class="stat-note">Awaiting verification</div></div>
+        <div class="stat-card resolved"><div class="stat-head"><span>Resolved</span><span class="stat-icon">✓</span></div><strong id="resolvedCount">—</strong><div class="stat-note">Marked as resolved</div></div>
+      </section>
+      <section class="panel" id="reports" style="margin-bottom:20px">
+        <div class="panel-heading"><div><h3>Incident Reports</h3><p>Search, filter and update reported incidents.</p></div><span class="badge status" id="reportCountLabel">0 reports</span></div>
+        <div class="filters">
+          <input class="field" id="searchInput" type="search" placeholder="Search ID, description or type...">
+          <select class="field" id="priorityFilter"><option value="">All priorities</option><option value="HIGH">High priority</option><option value="MEDIUM">Medium priority</option><option value="LOW">Low priority</option></select>
+          <select class="field" id="statusFilter"><option value="">All statuses</option><option value="PENDING_VERIFICATION">Pending verification</option><option value="VERIFIED">Verified</option><option value="RESCUE_IN_PROGRESS">Rescue in progress</option><option value="RESOLVED">Resolved</option><option value="REJECTED">Rejected</option></select>
+          <button class="btn btn-light" id="clearFiltersBtn">Clear filters</button>
+        </div>
+        <div id="reportsMessage" class="message"></div>
+        <div class="report-list" id="reportList"><div class="empty"><div class="emoji">◌</div>Connect to the API to load incident reports.</div></div>
+      </section>
+      <section class="dashboard-grid">
+        <div class="panel" id="mapPanel">
+          <div class="panel-heading"><div><h3>Incident Map</h3><p>Geographic view of reports with coordinates.</p></div><span class="badge">LIVE VIEW</span></div>
+          <div id="incidentMap"></div><div class="map-caption">Map pins show report locations. Select a report to focus its location.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-heading"><div><h3>Incident Details</h3><p>Select a report to view its information.</p></div></div>
+          <div id="reportDetails" class="empty"><div class="emoji">⌖</div>Select an incident from the report list to see its details here.</div>
+        </div>
+      </section>
+    </div>
+    <footer class="footer">SafeSight · Community disaster reporting and rescue coordination prototype.<br>For immediate danger, contact local emergency services.</footer>
+  </main>
+</div>
+<div id="loginOverlay" class="overlay">
+  <form class="login-card" id="loginForm">
+    <div class="login-brand">🛟 SafeSight</div><h2>Rescue team access</h2>
+    <p>Enter your administrator credentials to access incident reports and response controls.</p>
+    <label for="adminUsername">Username</label><input class="field" id="adminUsername" type="text" placeholder="Enter username" required autocomplete="username">
+    <label for="adminPassword">Password</label><input class="field" id="adminPassword" type="password" placeholder="Enter password" required autocomplete="current-password">
+    <div id="loginMessage" class="message"></div>
+    <button class="btn btn-blue" type="submit" id="loginBtn" style="width:100%">Access dashboard →</button>
+    <p style="margin-top:18px;font-size:10px">Authorized rescue personnel only.</p>
+  </form>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../js/dashboard.js"></script>
+</body>
+</html>
