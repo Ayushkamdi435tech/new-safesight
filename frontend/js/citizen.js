@@ -2,7 +2,7 @@
 (() => {
   "use strict";
 
-  const API_BASE = "http://127.0.0.1:8000/api";
+  const API_BASE = "https://safesight-7lgj.onrender.com/api";
   const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
   const $ = id => document.getElementById(id);
 
