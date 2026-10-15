@@ -1,6 +1,5 @@
 
-const API_BASE = "http://127.0.0.1:8000/api";
-
+const API_BASE = "https://safesight-7lgj.onrender.com/api";
 document.getElementById("login-form").onsubmit = async (e) => {
   e.preventDefault();
 
