@@ -1,11 +1,8 @@
 
-
 const API_BASE = "https://safesight-7lgj.onrender.com";
 const KEY_STORAGE = "safesight_admin_key";
 
 const SafeSightAPI = {
-  base: API_BASE,
-
   adminKey() {
     return sessionStorage.getItem(KEY_STORAGE) || "";
   },
@@ -24,18 +21,29 @@ const SafeSightAPI = {
       headers.set("X-Admin-Key", key);
     }
 
-    const response = await fetch(
-      path.startsWith("http") ? path : `${API_BASE}${path}`,
-      {
-        ...options,
-        headers
-      }
-    );
+    let response;
+
+    try {
+      response = await fetch(
+        path.startsWith("http") ? path : `${API_BASE}${path}`,
+        { ...options, headers }
+      );
+    } catch (error) {
+      throw new Error(
+        "Cannot connect to the backend. Check the Render service and CORS settings."
+      );
+    }
 
     const contentType = response.headers.get("content-type") || "";
-    const data = contentType.includes("application/json")
-      ? await response.json()
-      : {};
+    let data = {};
+
+    if (contentType.includes("application/json")) {
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+    }
 
     if (response.status === 401 && requireAdmin) {
       sessionStorage.removeItem(KEY_STORAGE);
@@ -102,11 +110,7 @@ const SafeSightAPI = {
   }
 
   function safeCoordinate(value) {
-    if (
-      value === null ||
-      value === undefined ||
-      value === ""
-    ) {
+    if (value === null || value === undefined || value === "") {
       return null;
     }
 
@@ -114,19 +118,41 @@ const SafeSightAPI = {
     return Number.isFinite(number) ? number : null;
   }
 
-  function setMessage(message, isError = false) {
-    const element = $("reports-message");
-
+  function setMessage(id, message, type = "info") {
+    const element = $(id);
     if (!element) return;
 
     element.textContent = message;
-    element.className = isError ? "error" : "";
+    element.className = `message show ${type}`;
+  }
+
+  function clearMessage(id) {
+    const element = $(id);
+    if (!element) return;
+
+    element.textContent = "";
+    element.className = "message";
+  }
+
+  function setApiStatus(message, isError = false) {
+    const element = $("apiStatus");
+    if (!element) return;
+
+    element.textContent = message;
+
+    const dot = element.previousElementSibling;
+    if (dot) {
+      dot.style.background = isError ? "#f87171" : "#34d399";
+    }
   }
 
   function initializeMap() {
-    const mapElement = $("incident-map");
+    const mapElement = $("incidentMap");
 
-    if (!mapElement || !window.L) return;
+    if (!mapElement || !window.L) {
+      console.warn("Map container or Leaflet library is unavailable.");
+      return;
+    }
 
     try {
       map = L.map(mapElement).setView([19.2, 75.7], 6);
@@ -146,51 +172,69 @@ const SafeSightAPI = {
   }
 
   function bindEvents() {
-    $("logout-btn")?.addEventListener("click", () => {
+    $("logoutBtn")?.addEventListener("click", () => {
       sessionStorage.removeItem(KEY_STORAGE);
+
+      if (currentPhotoUrl) {
+        URL.revokeObjectURL(currentPhotoUrl);
+      }
+
       window.location.href = "login.html";
     });
 
-    $("refresh-btn")?.addEventListener("click", load);
+    $("refreshBtn")?.addEventListener("click", load);
 
-    $("priority-filter")?.addEventListener("change", render);
-    $("status-filter")?.addEventListener("change", render);
-    $("search-filter")?.addEventListener("input", render);
+    $("priorityFilter")?.addEventListener("change", render);
+    $("statusFilter")?.addEventListener("change", render);
+    $("searchInput")?.addEventListener("input", render);
+
+    $("clearFiltersBtn")?.addEventListener("click", () => {
+      $("priorityFilter").value = "";
+      $("statusFilter").value = "";
+      $("searchInput").value = "";
+      render();
+    });
+
+    if ($("currentDate")) {
+      $("currentDate").textContent = new Date().toLocaleDateString(
+        [],
+        {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        }
+      );
+    }
   }
 
   function updateCounters() {
-    if ($("total-count")) {
-      $("total-count").textContent = reports.length;
-    }
+    $("totalCount").textContent = reports.length;
 
-    if ($("high-count")) {
-      $("high-count").textContent = reports.filter(
-        (report) => report.priority === "HIGH"
-      ).length;
-    }
+    $("highCount").textContent = reports.filter(
+      (report) => report.priority === "HIGH"
+    ).length;
 
-    if ($("pending-count")) {
-      $("pending-count").textContent = reports.filter(
-        (report) => report.status === "PENDING_VERIFICATION"
-      ).length;
-    }
+    $("pendingCount").textContent = reports.filter(
+      (report) => report.status === "PENDING_VERIFICATION"
+    ).length;
 
-    if ($("active-count")) {
-      $("active-count").textContent = reports.filter(
-        (report) => report.status === "RESCUE_IN_PROGRESS"
-      ).length;
-    }
+    $("resolvedCount").textContent = reports.filter(
+      (report) => report.status === "RESOLVED"
+    ).length;
   }
 
   async function load() {
     if (loading) return;
 
     loading = true;
-    setMessage("Loading reports…");
 
-    if ($("refresh-btn")) {
-      $("refresh-btn").disabled = true;
-    }
+    const refreshButton = $("refreshBtn");
+    if (refreshButton) refreshButton.disabled = true;
+
+    setApiStatus("Connecting to API…");
+    setMessage("reportsMessage", "Loading incident reports…", "info");
+    clearMessage("globalMessage");
 
     try {
       const result = await SafeSightAPI.request(
@@ -208,41 +252,49 @@ const SafeSightAPI = {
       updateCounters();
       render();
 
+      setApiStatus("API connected");
       setMessage(
-        "Updated " +
-        new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit"
-        })
+        "reportsMessage",
+        `Successfully loaded ${reports.length} report${reports.length === 1 ? "" : "s"}.`,
+        "success"
       );
     } catch (error) {
       console.error("Could not load reports:", error);
-      setMessage(error.message || "Could not load reports.", true);
 
-      const box = $("reports-list");
+      setApiStatus("API connection failed", true);
+      setMessage(
+        "reportsMessage",
+        error.message || "Could not load reports.",
+        "error"
+      );
 
-      if (box) {
-        box.innerHTML = `
-          <div class="empty-state">
-            <span>!</span>
-            <b>Could not load reports</b>
-            <p>${esc(error.message)}</p>
-          </div>
-        `;
-      }
+      $("reportList").innerHTML = `
+        <div class="empty">
+          <div class="emoji">!</div>
+          <b>Could not load incident reports</b>
+          <p>${esc(error.message)}</p>
+          <p>Check the Render backend, authentication and CORS settings.</p>
+        </div>
+      `;
+
+      if ($("totalCount")) $("totalCount").textContent = "—";
+      if ($("highCount")) $("highCount").textContent = "—";
+      if ($("pendingCount")) $("pendingCount").textContent = "—";
+      if ($("resolvedCount")) $("resolvedCount").textContent = "—";
     } finally {
       loading = false;
+      if (refreshButton) refreshButton.disabled = false;
 
-      if ($("refresh-btn")) {
-        $("refresh-btn").disabled = false;
+      if (map) {
+        setTimeout(() => map.invalidateSize(), 100);
       }
     }
   }
 
   function getFilteredReports() {
-    const priority = $("priority-filter")?.value || "";
-    const status = $("status-filter")?.value || "";
-    const search = ($("search-filter")?.value || "")
+    const priority = $("priorityFilter")?.value || "";
+    const status = $("statusFilter")?.value || "";
+    const search = ($("searchInput")?.value || "")
       .trim()
       .toLowerCase();
 
@@ -270,14 +322,13 @@ const SafeSightAPI = {
   }
 
   function render() {
-    const box = $("reports-list");
-
+    const box = $("reportList");
     if (!box) return;
 
     const items = getFilteredReports();
 
-    if ($("visible-count")) {
-      $("visible-count").textContent =
+    if ($("reportCountLabel")) {
+      $("reportCountLabel").textContent =
         `${items.length} report${items.length === 1 ? "" : "s"}`;
     }
 
@@ -285,21 +336,24 @@ const SafeSightAPI = {
 
     if (!items.length) {
       box.innerHTML = `
-        <div class="empty-state">
-          <span>⌕</span>
+        <div class="empty">
+          <div class="emoji">⌕</div>
           <b>No matching reports</b>
-          <p>Try changing the filters or submit a test report in the Citizen Panel.</p>
+          <p>Try changing the filters or submit a report through the Citizen Portal.</p>
         </div>
       `;
     }
 
     items.forEach((report) => {
       const card = document.createElement("article");
+      card.className = "report-item";
 
-      card.className =
-        "report-card" +
-        (selectedId === report.public_id ? " selected" : "");
+      if (selectedId === report.public_id) {
+        card.style.borderColor = "#60a5fa";
+        card.style.background = "#fbfdff";
+      }
 
+      const priority = String(report.priority || "UNRATED");
       const options = statuses.map(([value, label]) => `
         <option value="${value}"
           ${report.status === value ? "selected" : ""}>
@@ -307,62 +361,68 @@ const SafeSightAPI = {
         </option>
       `).join("");
 
-      const latitude = safeCoordinate(report.latitude);
-      const longitude = safeCoordinate(report.longitude);
+      const lat = safeCoordinate(report.latitude);
+      const lng = safeCoordinate(report.longitude);
 
       card.innerHTML = `
         <div class="report-top">
-          <span class="report-id">${esc(report.public_id)}</span>
-          <span class="badge ${esc(String(report.priority || "").toLowerCase())}">
-            ${esc(report.priority || "UNRATED")} PRIORITY
+          <span class="report-id">${esc(report.public_id || "No ID")}</span>
+          <span class="badge ${esc(priority.toLowerCase())}">
+            ${esc(priority)} PRIORITY
           </span>
         </div>
 
-        <h3>${esc(report.disaster_type || "Unknown disaster")}</h3>
+        <h4>${esc(report.disaster_type || "Unknown disaster")}</h4>
 
         <p class="report-description">
-          ${esc(report.description || "No description")}
+          ${esc(report.description || "No description provided.")}
         </p>
 
         <div class="report-meta">
           <span>⌖ ${
-            latitude !== null && longitude !== null
-              ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            lat !== null && lng !== null
+              ? `${lat.toFixed(4)}, ${lng.toFixed(4)}`
               : "Location unavailable"
           }</span>
-
           <span>♙ ${esc(report.people_affected ?? "Unknown")} affected</span>
           <span>◷ ${esc(dateLabel(report.created_at))}</span>
+          <span class="badge status">
+            ${esc(String(report.status || "Unknown").replaceAll("_", " "))}
+          </span>
         </div>
 
-        <div class="report-controls">
-          <select aria-label="Update report status">
+        <div class="report-actions">
+          <select class="field" aria-label="Update report status">
             ${options}
           </select>
 
-          <button type="button" class="button" data-update>
+          <button type="button" class="btn btn-blue" data-update>
             Save status
           </button>
 
-          <button type="button" class="button button-mini-secondary" data-view>
+          <button type="button" class="btn btn-light" data-view>
             Details
           </button>
         </div>
       `;
 
       const statusSelect = card.querySelector("select");
-      const updateButton = card.querySelector("[data-update]");
-      const viewButton = card.querySelector("[data-view]");
 
-      updateButton.addEventListener("click", async (event) => {
-        event.stopPropagation();
-        await updateStatus(report.public_id, statusSelect.value);
-      });
+      card.querySelector("[data-update]").addEventListener(
+        "click",
+        async (event) => {
+          event.stopPropagation();
+          await updateStatus(report.public_id, statusSelect.value);
+        }
+      );
 
-      viewButton.addEventListener("click", (event) => {
-        event.stopPropagation();
-        show(report);
-      });
+      card.querySelector("[data-view]").addEventListener(
+        "click",
+        (event) => {
+          event.stopPropagation();
+          show(report);
+        }
+      );
 
       card.addEventListener("click", () => show(report));
       box.appendChild(card);
@@ -399,14 +459,14 @@ const SafeSightAPI = {
     });
 
     locatedReports.forEach((report) => {
-      L.marker([
-        Number(report.latitude),
-        Number(report.longitude)
-      ])
+      const lat = Number(report.latitude);
+      const lng = Number(report.longitude);
+
+      L.marker([lat, lng])
         .addTo(layer)
         .bindPopup(`
-          <b>${esc(report.public_id)}</b><br>
-          ${esc(report.disaster_type)}<br>
+          <b>${esc(report.public_id || "Report")}</b><br>
+          ${esc(report.disaster_type || "Unknown disaster")}<br>
           ${esc(report.priority || "UNRATED")} priority
         `)
         .on("click", () => show(report));
@@ -426,35 +486,37 @@ const SafeSightAPI = {
     selectedId = report.public_id;
     updateSelectedPanel(report);
 
-    document.querySelectorAll(".report-card").forEach((card) => {
-      card.classList.toggle(
-        "selected",
-        card.querySelector(".report-id")?.textContent === report.public_id
-      );
+    document.querySelectorAll(".report-item").forEach((card) => {
+      const id = card.querySelector(".report-id")?.textContent;
+      const selected = id === String(report.public_id || "No ID");
+
+      card.style.borderColor = selected ? "#60a5fa" : "";
+      card.style.background = selected ? "#fbfdff" : "";
     });
 
     const lat = safeCoordinate(report.latitude);
     const lng = safeCoordinate(report.longitude);
 
-    if (map && layer && lat !== null && lng !== null) {
+    if (map && lat !== null && lng !== null) {
       map.setView([lat, lng], 14);
 
-      layer.eachLayer((marker) => {
-        const position = marker.getLatLng();
+      if (layer) {
+        layer.eachLayer((marker) => {
+          const position = marker.getLatLng();
 
-        if (
-          Math.abs(position.lat - lat) < 0.000001 &&
-          Math.abs(position.lng - lng) < 0.000001
-        ) {
-          marker.openPopup();
-        }
-      });
+          if (
+            Math.abs(position.lat - lat) < 0.000001 &&
+            Math.abs(position.lng - lng) < 0.000001
+          ) {
+            marker.openPopup();
+          }
+        });
+      }
     }
   }
 
   function updateSelectedPanel(report) {
-    const panel = $("selected-report");
-
+    const panel = $("reportDetails");
     if (!panel) return;
 
     if (currentPhotoUrl) {
@@ -462,15 +524,13 @@ const SafeSightAPI = {
       currentPhotoUrl = null;
     }
 
-    panel.className = "selected-report";
-
     const lat = safeCoordinate(report.latitude);
     const lng = safeCoordinate(report.longitude);
 
+    panel.className = "";
     panel.innerHTML = `
       <div class="report-top">
-        <span class="report-id">${esc(report.public_id)}</span>
-
+        <span class="report-id">${esc(report.public_id || "No ID")}</span>
         <span class="badge ${esc(String(report.priority || "").toLowerCase())}">
           ${esc(report.priority || "UNRATED")} PRIORITY
         </span>
@@ -480,61 +540,57 @@ const SafeSightAPI = {
         ${esc(report.disaster_type || "Unknown disaster")}
       </h3>
 
-      <p>${esc(report.description || "No description")}</p>
+      <p class="report-description">
+        ${esc(report.description || "No description provided.")}
+      </p>
 
-      <div class="detail-grid">
-        <div class="detail-cell">
-          <small>CURRENT STATUS</small>
-          <b>${esc(String(report.status || "Unknown").replaceAll("_", " "))}</b>
+      <div class="detail-box">
+        <div class="detail-row">
+          <strong>Current status</strong>
+          ${esc(String(report.status || "Unknown").replaceAll("_", " "))}
         </div>
-
-        <div class="detail-cell">
-          <small>PRIORITY SCORE</small>
-          <b>${esc(report.priority_score ?? "Not available")}</b>
+        <div class="detail-row">
+          <strong>Priority score</strong>
+          ${esc(report.priority_score ?? "Not available")}
         </div>
-
-        <div class="detail-cell">
-          <small>PEOPLE TRAPPED</small>
-          <b>${report.people_trapped ? "Reported yes" : "Not reported"}</b>
+        <div class="detail-row">
+          <strong>People trapped</strong>
+          ${report.people_trapped ? "Yes" : "Not reported"}
         </div>
-
-        <div class="detail-cell">
-          <small>PEOPLE AFFECTED</small>
-          <b>${esc(report.people_affected ?? "Unknown")}</b>
+        <div class="detail-row">
+          <strong>People affected</strong>
+          ${esc(report.people_affected ?? "Unknown")}
+        </div>
+        <div class="detail-row">
+          <strong>Location</strong>
+          ${
+            lat !== null && lng !== null
+              ? `${lat.toFixed(6)}, ${lng.toFixed(6)}`
+              : "Unavailable"
+          }
+        </div>
+        <div class="detail-row">
+          <strong>Submitted</strong>
+          ${esc(dateLabel(report.created_at))}
+        </div>
+        <div class="detail-row">
+          <strong>AI summary</strong>
+          ${esc(report.ai_summary || "Not available")}
         </div>
       </div>
 
-      <p><b>Location:</b> ${
-        lat !== null && lng !== null
-          ? `${lat.toFixed(6)}, ${lng.toFixed(6)}`
-          : "Unavailable"
-      }</p>
-
-      <p><b>Submitted:</b> ${esc(dateLabel(report.created_at))}</p>
-
-      <p><b>AI summary:</b> ${esc(report.ai_summary || "Not available")}</p>
-
-      <div class="photo-evidence" style="margin:12px 0">
-        <p><b>Photo evidence</b></p>
-
-        ${
-          report.image_path
-            ? `
-              <button
-                type="button"
-                class="button"
-                id="loadPhotoBtn"
-              >
-                View incident photo
-              </button>
-
-              <div id="photoContainer" style="margin-top:12px"></div>
-            `
-            : "<p>No photo attached.</p>"
-        }
+      <div class="detail-box">
+        <strong>Photo evidence</strong>
+        <div id="photoContainer" style="margin-top:12px">
+          ${
+            report.image_path
+              ? `<button type="button" class="btn btn-blue" id="loadPhotoBtn">View incident photo</button>`
+              : `<p class="report-description">No photo attached.</p>`
+          }
+        </div>
       </div>
 
-      <p class="field-hint">
+      <p class="report-description">
         Verify incidents before taking operational action.
       </p>
     `;
@@ -546,7 +602,7 @@ const SafeSightAPI = {
         const container = $("photoContainer");
 
         loadPhotoBtn.disabled = true;
-        loadPhotoBtn.textContent = "Loading photo...";
+        loadPhotoBtn.textContent = "Loading photo…";
 
         try {
           const response = await fetch(
@@ -571,7 +627,7 @@ const SafeSightAPI = {
               const error = await response.json();
               message = error.detail || message;
             } catch {
-              // Keep the default error message.
+              // Keep the default message.
             }
 
             throw new Error(message);
@@ -600,15 +656,16 @@ const SafeSightAPI = {
           image.style.display = "block";
 
           container.replaceChildren(image);
-          loadPhotoBtn.textContent = "Photo loaded";
         } catch (error) {
           console.error("Photo loading failed:", error);
 
           container.textContent =
             error.message || "Could not load the photo.";
-
-          loadPhotoBtn.textContent = "Try again";
-          loadPhotoBtn.disabled = false;
+        } finally {
+          if (loadPhotoBtn.isConnected) {
+            loadPhotoBtn.disabled = false;
+            loadPhotoBtn.textContent = "View incident photo";
+          }
         }
       });
     }
@@ -616,7 +673,7 @@ const SafeSightAPI = {
 
   async function updateStatus(id, status) {
     try {
-      setMessage("Updating report status…");
+      setMessage("globalMessage", "Updating report status…", "info");
 
       await SafeSightAPI.request(
         `/api/reports/${encodeURIComponent(id)}/status`,
@@ -641,22 +698,35 @@ const SafeSightAPI = {
         show(updatedReport);
       }
 
-      setMessage("Report status updated successfully.");
+      setMessage(
+        "globalMessage",
+        "Report status updated successfully.",
+        "success"
+      );
     } catch (error) {
       console.error("Status update failed:", error);
-      alert("Status update failed: " + error.message);
+
+      setMessage(
+        "globalMessage",
+        `Status update failed: ${error.message}`,
+        "error"
+      );
     }
   }
 
-  function start() {
+  async function start() {
     if (!SafeSightAPI.adminKey()) {
-      window.location.href = "login.html";
+      window.location.replace("login.html");
       return;
     }
 
-    initializeMap();
     bindEvents();
-    load();
+    initializeMap();
+    await load();
+
+    if (map) {
+      setTimeout(() => map.invalidateSize(), 200);
+    }
   }
 
   if (document.readyState === "loading") {
