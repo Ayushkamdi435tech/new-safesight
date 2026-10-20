@@ -1,9 +1,14 @@
+
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
+
 class ReportOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
     public_id: str
+    reporter_name: str
+    contact_number: str
     disaster_type: str
     description: str
     latitude: float
@@ -17,5 +22,8 @@ class ReportOut(BaseModel):
     status: str
     created_at: datetime
 
+
 class StatusUpdate(BaseModel):
-    status: str = Field(pattern="^(PENDING_VERIFICATION|VERIFIED|RESCUE_IN_PROGRESS|RESOLVED|REJECTED)$")
+    status: str = Field(
+        pattern="^(PENDING_VERIFICATION|VERIFIED|RESCUE_IN_PROGRESS|RESOLVED|REJECTED)$"
+    )
