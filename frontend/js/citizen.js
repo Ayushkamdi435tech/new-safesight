@@ -13,12 +13,16 @@
 
   function message(id, text, type = "info") {
     const el = $(id);
+    if (!el) return;
+
     el.textContent = text;
     el.className = `message show ${type}`;
   }
 
   function clearMessage(id) {
     const el = $(id);
+    if (!el) return;
+
     el.textContent = "";
     el.className = "message";
   }
@@ -30,10 +34,8 @@
     if (
       !Number.isFinite(lat) ||
       !Number.isFinite(lng) ||
-      lat < -90 ||
-      lat > 90 ||
-      lng < -180 ||
-      lng > 180
+      lat < -90 || lat > 90 ||
+      lng < -180 || lng > 180
     ) {
       message("locationMessage", "Invalid location coordinates.", "error");
       return;
@@ -41,10 +43,16 @@
 
     coordinates = { latitude: lat, longitude: lng };
 
-    $("latitude").value = lat;
-    $("longitude").value = lng;
-    $("latitudeDisplay").textContent = lat.toFixed(6);
-    $("longitudeDisplay").textContent = lng.toFixed(6);
+    if ($("latitude")) $("latitude").value = lat;
+    if ($("longitude")) $("longitude").value = lng;
+
+    if ($("latitudeDisplay")) {
+      $("latitudeDisplay").textContent = lat.toFixed(6);
+    }
+
+    if ($("longitudeDisplay")) {
+      $("longitudeDisplay").textContent = lng.toFixed(6);
+    }
 
     if (map) {
       if (!marker) {
@@ -65,6 +73,8 @@
   }
 
   function initializeMap() {
+    if (! $("locationMap")) return;
+
     if (typeof L === "undefined") {
       message(
         "locationMessage",
@@ -105,6 +115,8 @@
     }
 
     const button = $("currentLocationBtn");
+    if (!button) return;
+
     button.disabled = true;
     button.textContent = "Finding location...";
 
@@ -144,7 +156,10 @@
   }
 
   async function findAddress() {
-    const address = $("manualAddress").value.trim();
+    const addressInput = $("manualAddress");
+    if (!addressInput) return;
+
+    const address = addressInput.value.trim();
 
     if (address.length < 3) {
       message(
@@ -156,6 +171,8 @@
     }
 
     const button = $("searchAddressBtn");
+    if (!button) return;
+
     button.disabled = true;
     button.textContent = "Searching...";
 
@@ -185,7 +202,7 @@
       const result = results[0];
 
       setLocation(Number(result.lat), Number(result.lon), 16);
-      $("manualAddress").value = result.display_name || address;
+      addressInput.value = result.display_name || address;
 
       message(
         "locationMessage",
@@ -207,20 +224,25 @@
   function resetLocation() {
     coordinates = null;
 
-    $("latitude").value = "";
-    $("longitude").value = "";
-    $("latitudeDisplay").textContent = "Not selected";
-    $("longitudeDisplay").textContent = "Not selected";
-    $("manualAddress").value = "";
+    if ($("latitude")) $("latitude").value = "";
+    if ($("longitude")) $("longitude").value = "";
+
+    if ($("latitudeDisplay")) {
+      $("latitudeDisplay").textContent = "Not selected";
+    }
+
+    if ($("longitudeDisplay")) {
+      $("longitudeDisplay").textContent = "Not selected";
+    }
+
+    if ($("manualAddress")) $("manualAddress").value = "";
 
     if (marker && map) {
       map.removeLayer(marker);
       marker = null;
     }
 
-    if (map) {
-      map.setView([20.5937, 78.9629], 5);
-    }
+    if (map) map.setView([20.5937, 78.9629], 5);
 
     message(
       "locationMessage",
@@ -245,15 +267,19 @@
     return true;
   }
 
-  $("currentLocationBtn").addEventListener("click", useGPS);
-  $("searchAddressBtn").addEventListener("click", findAddress);
-  $("resetLocationBtn").addEventListener("click", resetLocation);
+  // Location controls
+  $("currentLocationBtn")?.addEventListener("click", useGPS);
+  $("searchAddressBtn")?.addEventListener("click", findAddress);
+  $("resetLocationBtn")?.addEventListener("click", resetLocation);
 
-  $("image").addEventListener("change", () => {
+  // Photo preview
+  $("image")?.addEventListener("change", () => {
     clearMessage("formMessage");
 
     const file = $("image").files[0];
     const preview = $("photoPreview");
+
+    if (!preview) return;
 
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -275,9 +301,53 @@
     preview.style.display = "block";
   });
 
-  $("reportForm").addEventListener("submit", async event => {
+  // Submit emergency report
+  $("reportForm")?.addEventListener("submit", async event => {
     event.preventDefault();
     clearMessage("formMessage");
+
+    // NEW: Reporter contact details
+    const nameInput = $("reporterName");
+    const contactInput = $("contactNumber");
+
+    if (!nameInput || !contactInput) {
+      message(
+        "formMessage",
+        "Reporter name/contact fields are missing from report.html. Add reporterName and contactNumber fields first.",
+        "error"
+      );
+      return;
+    }
+
+    const reporterName = nameInput.value.trim();
+    const contactNumber = contactInput.value.trim();
+
+    if (reporterName.length < 2 || reporterName.length > 100) {
+      message(
+        "formMessage",
+        "Enter a name between 2 and 100 characters.",
+        "error"
+      );
+      nameInput.focus();
+      return;
+    }
+
+    // Allows international prefixes, spaces, brackets and hyphens.
+    const digits = contactNumber.replace(/\D/g, "");
+
+    if (
+      !/^\+?[0-9\s()-]+$/.test(contactNumber) ||
+      digits.length < 7 ||
+      digits.length > 15
+    ) {
+      message(
+        "formMessage",
+        "Enter a valid contact number containing 7 to 15 digits.",
+        "error"
+      );
+      contactInput.focus();
+      return;
+    }
 
     if (!coordinates) {
       message(
@@ -286,20 +356,20 @@
         "error"
       );
 
-      $("locationMap").scrollIntoView({
+      $("locationMap")?.scrollIntoView({
         behavior: "smooth",
         block: "center"
       });
       return;
     }
 
-    const file = $("image").files[0];
+    const file = $("image")?.files[0];
 
     if (!checkPhoto(file)) return;
 
-    const disasterType = $("disasterType").value;
-    const description = $("description").value.trim();
-    const affectedText = $("peopleAffected").value.trim();
+    const disasterType = $("disasterType")?.value || "";
+    const description = $("description")?.value.trim() || "";
+    const affectedText = $("peopleAffected")?.value.trim() || "";
     const affected = affectedText === "" ? null : Number(affectedText);
 
     if (!disasterType) {
@@ -328,16 +398,21 @@
       return;
     }
 
+    // NEW: Include reporter details in the API payload.
     const payload = {
+      reporter_name: reporterName,
+      contact_number: contactNumber,
       disaster_type: disasterType,
       description,
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
-      people_trapped: $("peopleTrapped").value === "true",
+      people_trapped: $("peopleTrapped")?.value === "true",
       people_affected: affected
     };
 
     const button = $("submitBtn");
+    if (!button) return;
+
     button.disabled = true;
     button.textContent = "Submitting report...";
 
@@ -350,9 +425,7 @@
         }
       }
 
-      if (file) {
-        data.append("image", file);
-      }
+      if (file) data.append("image", file);
 
       const response = await fetch(`${API_BASE}/reports`, {
         method: "POST",
@@ -376,8 +449,10 @@
         previewUrl = null;
       }
 
-      $("photoPreview").removeAttribute("src");
-      $("photoPreview").style.display = "none";
+      if ($("photoPreview")) {
+        $("photoPreview").removeAttribute("src");
+        $("photoPreview").style.display = "none";
+      }
 
       resetLocation();
 
@@ -387,6 +462,8 @@
         "success"
       );
     } catch (error) {
+      console.error("Report submission failed:", error);
+
       message(
         "formMessage",
         `Submission failed: ${error.message}`,
