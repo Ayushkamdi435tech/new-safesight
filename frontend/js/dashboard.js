@@ -126,8 +126,14 @@ function getStatusClass(status) {
   return "pending";
 }
 
+// Supports the public_id returned by the SafeSight API.
 function getReportId(report) {
-  return report.id ?? report.report_id ?? report.uuid;
+  return (
+    report.public_id ??
+    report.id ??
+    report.report_id ??
+    report.uuid
+  );
 }
 
 function getReportLocation(report) {
@@ -331,7 +337,10 @@ function renderMapMarkers(reports) {
       ])
     );
 
-    state.map.fitBounds(bounds, { padding: [30, 30], maxZoom: 13 });
+    state.map.fitBounds(bounds, {
+      padding: [30, 30],
+      maxZoom: 13,
+    });
   }
 }
 
@@ -727,7 +736,11 @@ async function loadReports() {
     setApiStatus("API Connected", true);
 
     if (reports.length === 0) {
-      showMessage("reportsMessage", "No reports have been submitted yet.", "info");
+      showMessage(
+        "reportsMessage",
+        "No reports have been submitted yet.",
+        "info"
+      );
     }
   } catch (error) {
     console.error("Failed to load reports:", error);
