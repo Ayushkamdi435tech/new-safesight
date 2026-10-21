@@ -46,30 +46,103 @@
     .field{width:100%;border:1px solid #dce4ee;border-radius:9px;padding:11px 12px;background:#fff;color:#334155;outline:none;font-size:12px;min-width:0}
     .field:focus{border-color:#60a5fa;box-shadow:0 0 0 3px #dbeafe}
     .dashboard-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:20px;align-items:start}
+    
+    /* Report Card & List Styles */
     .report-list{display:flex;flex-direction:column;gap:12px}
-    .report-item{padding:16px;border:1px solid var(--line);border-radius:12px;transition:.15s ease}
-    .report-item:hover{border-color:#9bbdf7;background:#fbfdff}
-    .report-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-    .report-id{font-size:10px;color:var(--blue);font-weight:800}.report-item h4{margin:8px 0;font-size:14px}
-    .report-description{color:var(--muted);font-size:12px;line-height:1.6;overflow-wrap:anywhere}
-    .report-meta{display:flex;flex-wrap:wrap;gap:12px;margin-top:11px;font-size:10px;color:var(--muted)}
-    .badge{display:inline-flex;align-items:center;padding:6px 9px;border-radius:99px;font-size:10px;font-weight:800;background:#edf2f7;color:#475569;white-space:nowrap}
-    .badge.high,.badge.urgent{background:#fee2e2;color:#b91c1c}.badge.medium{background:#fef3c7;color:#92400e}.badge.low{background:#dcfce7;color:#166534}.badge.status{background:#eff6ff;color:#1d4ed8}
+    .report-card,.report-item{padding:18px;border:1px solid var(--line);border-radius:14px;background:#fff;transition:border .15s ease,box-shadow .15s ease,transform .15s ease;position:relative}
+    .report-card:hover,.report-item:hover{border-color:#9bbdf7;background:#fbfdff;box-shadow:0 6px 20px rgba(37,99,235,0.06);transform:translateY(-1px)}
+    .report-card.selected{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.18),0 8px 24px rgba(37,99,235,0.08);background:#fbfdff}
+    
+    .report-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .report-top-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .report-id{font-size:11px;color:var(--blue);font-weight:800;background:#eff6ff;padding:3px 8px;border-radius:6px;letter-spacing:.5px}
+    .report-card h3,.report-item h4{margin:0;font-size:15px;font-weight:700;color:var(--navy)}
+    .report-top-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    
+    .report-description{color:#475569;font-size:13px;line-height:1.6;margin:8px 0 10px;overflow-wrap:anywhere}
+    
+    .report-meta{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:10px;font-size:11px;color:var(--muted)}
+    .meta-item{display:inline-flex;align-items:center;gap:5px}
+    
+    /* Report Footer & View Details Button at Lower Right */
+    .report-footer{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);flex-wrap:wrap}
+    .report-footer-left{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+    .report-footer-left span{display:inline-flex;align-items:center;gap:5px}
+    .report-footer-right{margin-left:auto}
+    
+    .btn-view-details{display:inline-flex;align-items:center;gap:7px;background:#2563eb;color:#ffffff;border:none;border-radius:9px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s cubic-bezier(.4,0,.2,1);box-shadow:0 2px 6px rgba(37,99,235,.22);white-space:nowrap}
+    .btn-view-details:hover{background:#1d4ed8;transform:translateY(-1.5px);box-shadow:0 5px 14px rgba(37,99,235,.35)}
+    .btn-view-details:active{transform:translateY(0);box-shadow:0 2px 4px rgba(37,99,235,.2)}
+    .btn-view-details svg{flex-shrink:0;transition:transform .18s ease}
+    .btn-view-details:hover svg{transform:scale(1.12)}
+    
+    /* Badges */
+    .badge{display:inline-flex;align-items:center;padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;background:#edf2f7;color:#475569;white-space:nowrap;letter-spacing:.3px}
+    .badge.high,.badge.urgent{background:#fee2e2;color:#b91c1c}
+    .badge.medium{background:#fef3c7;color:#92400e}
+    .badge.low{background:#dcfce7;color:#166534}
+    .badge.status{background:#eff6ff;color:#1d4ed8}
+    .badge.status.pending,.badge.pending{background:#fef3c7;color:#92400e}
+    .badge.status.verified,.badge.verified{background:#e0e7ff;color:#4338ca}
+    .badge.status.in-progress,.badge.status.rescue_in_progress,.badge.in-progress{background:#dbeafe;color:#1e40af}
+    .badge.status.resolved,.badge.resolved{background:#dcfce7;color:#166534}
+    .badge.status.rejected,.badge.rejected{background:#fee2e2;color:#991b1b}
+    
     .report-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}.report-actions select{flex:1;min-width:150px}.report-actions .btn{padding:9px 12px}
     #incidentMap{width:100%;height:370px;border-radius:11px;z-index:1}.map-caption{margin-top:12px;font-size:11px;color:var(--muted);line-height:1.6}
     .message{padding:13px 15px;border-radius:9px;margin-bottom:15px;font-size:12px;display:none;overflow-wrap:anywhere}
     .message.show{display:block}.message.info{background:#eff6ff;color:#1d4ed8}.message.error{background:#fff0f0;color:#b91c1c}.message.success{background:#e8faf1;color:#166534}
     .empty{text-align:center;padding:40px 15px;color:var(--muted);font-size:12px;line-height:1.7}.empty .emoji{font-size:30px;margin-bottom:10px}
     .overlay{position:fixed;inset:0;z-index:3000;background:rgba(8,24,43,.65);display:grid;place-items:center;padding:20px}
-    .login-card{background:#fff;border-radius:18px;width:min(100%,420px);padding:30px;box-shadow:0 25px 90px rgba(0,0,0,.2)}
-    .login-card h2{margin:0 0 8px;font-size:23px}.login-card p{color:var(--muted);font-size:12px;line-height:1.6}
-    .login-card label{display:block;font-size:12px;font-weight:700;margin:20px 0 8px}.login-card input{margin-bottom:15px}
-    .login-brand{color:var(--blue);font-weight:800;margin-bottom:25px}.detail-row{margin:12px 0;font-size:12px;line-height:1.6}
-    .detail-row strong{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px}
-    .detail-box{background:#f8fafc;border-radius:10px;padding:15px;margin-top:15px}.hidden{display:none!important}
+    
+    .detail-row{margin:12px 0;font-size:12px;line-height:1.6}
+    .detail-row strong{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px}
+    .detail-box{background:#f8fafc;border:1px solid #eef2f7;border-radius:12px;padding:16px;margin-top:14px}
+    .hidden{display:none!important}
     .footer{padding:22px 32px;color:#8794a5;font-size:10px;text-align:center}
+    
+    /* Interactive Report Details Modal Styles */
+    .report-modal-overlay{position:fixed;inset:0;z-index:3500;background:rgba(10,25,45,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;justify-content:center;align-items:center;padding:20px;animation:modalFadeIn .2s ease-out}
+    @keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
+    .report-modal-card{background:#ffffff;border-radius:20px;width:min(100%,820px);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 25px 80px rgba(10,25,45,.35),0 0 0 1px rgba(255,255,255,.1);overflow:hidden;animation:modalSlideUp .25s cubic-bezier(.16,1,.3,1)}
+    @keyframes modalSlideUp{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .report-modal-header{display:flex;justify-content:space-between;align-items:flex-start;padding:22px 28px;border-bottom:1px solid var(--line);background:#f8fafc;gap:16px}
+    .modal-tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+    .report-id-badge{background:#eff6ff;color:#1d4ed8;font-weight:800;font-size:11px;padding:4px 9px;border-radius:6px;letter-spacing:.5px}
+    .report-modal-header h3{margin:0;font-size:20px;font-weight:800;color:var(--navy);letter-spacing:-.5px}
+    .modal-close-btn{width:36px;height:36px;border-radius:10px;border:1px solid #e2e8f0;background:#ffffff;color:#475569;cursor:pointer;font-size:16px;display:grid;place-items:center;transition:all .15s ease;flex-shrink:0}
+    .modal-close-btn:hover{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
+    .report-modal-body{padding:24px 28px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px}
+    .report-modal-body::-webkit-scrollbar{width:6px}
+    .report-modal-body::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:6px}
+    
+    .detail-banner{border-radius:12px;padding:13px 16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px}
+    .detail-banner.urgent{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
+    .detail-banner.safe{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534}
+    
+    .modal-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+    .modal-stat-tile{background:#f8fafc;border:1px solid #eef2f7;border-radius:12px;padding:13px 15px}
+    .modal-stat-tile small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;font-weight:700}
+    .modal-stat-tile strong{font-size:14px;color:var(--navy)}
+    
+    .modal-section{background:#ffffff;border:1px solid #e8eef5;border-radius:13px;padding:16px 18px}
+    .modal-section h4{margin:0 0 10px;font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.7px;display:flex;align-items:center;gap:7px}
+    .modal-section p{margin:0;font-size:13px;line-height:1.65;color:#334155;overflow-wrap:anywhere}
+    
+    .photo-preview-wrap{border-radius:12px;overflow:hidden;background:#0b172a;display:flex;justify-content:center;align-items:center;max-height:360px;margin-top:10px;border:1px solid #1e293b}
+    .photo-preview-wrap img{max-width:100%;max-height:360px;object-fit:contain;cursor:zoom-in}
+    
+    .modal-status-card{background:#f0f7ff;border:1px solid #bfdbfe;border-radius:14px;padding:16px 18px}
+    .modal-status-card h4{margin:0 0 10px;font-size:12px;font-weight:800;color:#1e40af;text-transform:uppercase;letter-spacing:.6px}
+    .modal-status-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .modal-status-actions select{flex:1;min-width:180px;padding:10px 12px;border-radius:9px;border:1px solid #93c5fd;background:#fff;font-size:13px;font-weight:600;color:#1e3a8a}
+    
+    .report-modal-footer{display:flex;justify-content:space-between;align-items:center;padding:16px 28px;border-top:1px solid var(--line);background:#f8fafc;gap:12px;flex-wrap:wrap}
+    .modal-footer-left{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .modal-footer-right{margin-left:auto}
+    
     @media(max-width:1100px){.sidebar{width:210px}.main{margin-left:210px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-grid{grid-template-columns:1fr}}
-    @media(max-width:700px){.sidebar{position:static;width:100%;padding:18px}.brand-caption,.nav-label,.sidebar nav,.sidebar-bottom{display:none}.main{margin-left:0}.topbar{padding:14px 17px}.content{padding:22px 15px}.welcome{align-items:flex-start;flex-direction:column}.stats{gap:10px}.stat-card{padding:15px}.stat-card strong{font-size:25px}.filters{grid-template-columns:1fr}.panel{padding:16px}.topbar p{display:none}.admin-chip{font-size:10px}.footer{padding:20px 10px}}
+    @media(max-width:700px){.sidebar{position:static;width:100%;padding:18px}.brand-caption,.nav-label,.sidebar nav,.sidebar-bottom{display:none}.main{margin-left:0}.topbar{padding:14px 17px}.content{padding:22px 15px}.welcome{align-items:flex-start;flex-direction:column}.stats{gap:10px}.stat-card{padding:15px}.stat-card strong{font-size:25px}.filters{grid-template-columns:1fr}.panel{padding:16px}.topbar p{display:none}.admin-chip{font-size:10px}.footer{padding:20px 10px}.report-modal-card{width:96%;max-height:94vh}.report-modal-header,.report-modal-body,.report-modal-footer{padding:16px}}
   </style>
 </head>
 <body>
@@ -132,6 +205,40 @@
     <footer class="footer">SafeSight · Community disaster reporting and rescue coordination prototype.<br>For immediate danger, contact local emergency services.</footer>
   </main>
 </div>
+
+<!-- Full Report Details Modal Dialog -->
+<div id="reportDetailsModal" class="report-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalReportTitle">
+  <div class="report-modal-card">
+    <div class="report-modal-header">
+      <div>
+        <div class="modal-tags">
+          <span class="report-id-badge" id="modalReportId">SS-000000</span>
+          <span class="badge" id="modalPriorityBadge">HIGH</span>
+          <span class="badge status" id="modalStatusBadge">PENDING VERIFICATION</span>
+        </div>
+        <h3 id="modalReportTitle">Incident Report Details</h3>
+      </div>
+      <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal" title="Close (Esc)">✕</button>
+    </div>
+    <div class="report-modal-body" id="modalReportBody">
+      <!-- Injected dynamically by dashboard.js -->
+    </div>
+    <div class="report-modal-footer">
+      <div class="modal-footer-left">
+        <button type="button" class="btn btn-light" id="modalFocusMapBtn">
+          <span>⌖</span> Focus on Incident Map
+        </button>
+        <a href="#" target="_blank" rel="noopener noreferrer" class="btn btn-light" id="modalGmapsLink">
+          <span>↗</span> Open in Google Maps
+        </a>
+      </div>
+      <div class="modal-footer-right">
+        <button type="button" class="btn btn-blue" id="modalDoneBtn">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="../js/dashboard.js"></script>
 </body>
